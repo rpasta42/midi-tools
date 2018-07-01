@@ -83,7 +83,7 @@ def parse_delta_and_event(tr_data, delta_start):
    while not delta_done:
       #print('doing delta')
 
-      delta_done = get_bit(delta_byte_i*8) == 0
+      delta_done = get_bit(delta_byte_i*8+7) == 0
 
       r = list(range(0, 7))
       r.reverse()
