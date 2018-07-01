@@ -83,28 +83,29 @@ def parse_delta_and_event(tr_data, delta_start):
    while not delta_done:
       #print('doing delta')
 
-      #delta_done = get_bit(delta_byte_i*7) == 0
-      delta_done = get_bit(delta_byte_i*0) == 0
+      delta_done = get_bit(delta_byte_i*8) == 0
 
-      for x in range(0, 7):
-         delta_acc.append(get_bit(delta_byte_i*7+x))
+      r = list(range(0, 7))
+      r.reverse()
+      for x in r:
+         delta_acc.append(get_bit(delta_byte_i*8+x))
 
-      #print(''.join([str(get_bit(delta_byte_i*7+x)) for x in range(0,7)]))
-      #print(assemble_num([get_bit(delta_byte_i*7+x) for x in range(0,7)]))
+      #print(''.join([str(get_bit(delta_byte_i*8+x)) for x in r]))
+      #print(assemble_num([get_bit(delta_byte_i*8+x) for x in r]))
 
       delta_len += 1
       delta_byte_i += 1
 
-   #print(''.join([str(get_bit((1+delta_byte_i)*7+x)) for x in range(0,7)]))
-
+   delta_acc.reverse()
    delta_time = assemble_num(delta_acc)
+   #print('kk:', ''.join([str(get_bit(delta_start*8+x)) for x in range(0, 8)]))
+   #print('kk:', ''.join([str(get_bit(delta_start*8+x)) for x in range(8, 16)]))
+
 
    print('delta time:', delta_time)
-   #print(tr_data[delta_start:delta_start+5])
-   #print(tr_data[delta_start+2]) #ff
 
    event_start = delta_start + delta_len
-   print('event start byte:', tr_data[event_start])
+   #print('event start byte:', tr_data[event_start])
 
    if tr_data[event_start] == 0xFF:
       meta_e, e_end = parse_meta_event(tr_data, event_start)
@@ -140,7 +141,7 @@ def parse_tracks1(midi_data):
       events.append(meta_e)
       start = e_end
 
-      if start > 25: #15:
+      if start > track_header.len: #15:
          done = True
       pass
 
