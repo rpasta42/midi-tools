@@ -81,8 +81,6 @@ def parse_delta_and_event(tr_data, delta_start):
    delta_len = 0
 
    while not delta_done:
-      #print('doing delta')
-
       delta_done = get_bit(delta_byte_i*8+7) == 0
 
       r = list(range(0, 7))
@@ -90,17 +88,11 @@ def parse_delta_and_event(tr_data, delta_start):
       for x in r:
          delta_acc.append(get_bit(delta_byte_i*8+x))
 
-      #print(''.join([str(get_bit(delta_byte_i*8+x)) for x in r]))
-      #print(assemble_num([get_bit(delta_byte_i*8+x) for x in r]))
-
       delta_len += 1
       delta_byte_i += 1
 
    delta_acc.reverse()
    delta_time = assemble_num(delta_acc)
-   #print('kk:', ''.join([str(get_bit(delta_start*8+x)) for x in range(0, 8)]))
-   #print('kk:', ''.join([str(get_bit(delta_start*8+x)) for x in range(8, 16)]))
-
 
    print('delta time:', delta_time)
 
