@@ -64,6 +64,10 @@ class MetaEvent:
       self.e_type = e_type
       self.e = e
       self.e_extra = e_extra
+   def __repr__(self):
+      fmt_args = [self.e_type, self.e, self.e_extra]
+      fmt_args = tuple(list(map(lambda x: str(x), fmt_args)))
+      return '%s %s %s' % fmt_args
    pass
 
 
