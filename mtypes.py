@@ -52,8 +52,12 @@ class MetaEventType(enum.Enum):
 
 #Me = Meta Event
 MeSeqNum = namedtuple('MeSeqNum', 'seq_num')
+
+MeSetTempo = namedtuple('MeSetTempo', 'tt')
+
 MeTimeSig = namedtuple('MeTimeSig', 'n d c b')
 MeKeySig = namedtuple('MeKeySig', 'sf mi')
+
 
 class MetaEvent:
    def __init__(self, e_type, e, e_extra=None):

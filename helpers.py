@@ -1,3 +1,4 @@
+from struct import unpack as unp
 
 def assemble_num(bits):
    '''
@@ -23,4 +24,8 @@ def get_bit_i(data, offset):
 
    byte = data[byte_offset]
    return (byte & (1 << bit_offset)) >> bit_offset
+
+def unp_3b(x):
+   short, byte = unp('>HB', x)
+   return short | byte << 16
 
