@@ -3,58 +3,97 @@
 from utiltools import shellutils as shu
 from struct import unpack as unp
 
+from mtypes import *
+from utils import *
 
-from collections import namedtuple
+import parse_simult
 
+class FileHeaderParser:
 
-def parse_chunk_type(data):
-   chunk_type_b = data[:4]
-   chunk_type = None
-   if chunk_type_b == 'MThd':
-      chunk_type = 'header'
-   elif chunk_type_b == 'MTrk':
-      chunk_type = 'track'
+   def __init__(self, midi_data):
+      self.midi_data = midi_data
+      self.parse_chunk()
+      self.print_info()
 
-   return chunk_type, chunk_type_b
+   def parse_chunk(self):
+      i = 0
+      size = 14
+      self.header = HeaderChunk._make(unp('>4sLHHH', self.midi_data[:size]))
+      i += size
 
+      self.chunk_type = FileHeaderParser.parse_chunk_type_(self.header.chunk_type_b)
+      self.division_type, self.tpqn, self.fps = FileHeaderParser.get_division_info_(self.header)
+      self.midi_format = MidiFormat(self.header.format)
 
-
-def unp_6b(x):
-   s, i = unp('>IH', x)
-   return s | (i << 16)
-
-def parse_chunk(chunk_data):
-   i = 0
-   chunk_type, chunk_type_b = parse_chunk_type(chunk_data)
-   i += 4
-   print('chunk type:', chunk_type_b, chunk_type)
-
-
-   chunk_len = unp('>L', chunk_data[i:i+4])[0]
-   i += 4
-   print('chunk len:', chunk_len)
+   def print_info(self):
+      print('chunk type:', self.chunk_type)
+      print(self.header)
+      print('ticks per quarter note:', self.tpqn)
+      print('midi format:', self.midi_format)
 
 
-   format_, track, division = unp('>HHH', chunk_data[i:i+6])
-   i += 6
-   print('h data', format_, track, division)
+
+   def parse_chunk_type_(chunk_type_b):
+      chunk_type = None
+      if chunk_type_b == b'MThd':
+         chunk_type = ChunkType.HEADER
+      elif chunk_type_b == b'MTrk':
+         chunk_type = ChunkType.TRACK
+      return chunk_type
+
+   def get_division_info_(header):
+      division_type_bit = header.division & (1 << 15)
+      division_type = DivisionType(division_type_bit)
+
+      tpqn = None
+      fps = None
+
+      print(division_type)
+      if division_type == DivisionType.TPQN:
+         tpqn = header.division << 1
+      else:
+         raise 'Unsupported division type'
+      return division_type, tpqn, fps
+
+   pass
 
 
-   return chunk_data
 
 
 def parse_midi_file(file_path):
 
    data = shu.read_file(file_path, binary=True)
 
-   HeaderChunk = namedtuple('HeaderChunk', 'chunk_type len format tracks division')
-   header = HeaderChunk._make(unp('>4sLHHH', data[:14]))
-   print(header)
+   print('===parsing file header chunk')
+   header_chunk = FileHeaderParser(data)
+   print('===end parsing file header chunk\n')
+
+   if header_chunk.midi_format == MidiFormat.SINGLE_TRACK:
+      pass
+   elif header_chunk.midi_format == MidiFormat.SIMULT_TRACKS:
+      parse_simult.parse_tracks1(data)
+   elif header_chunk.midi_format == MidiFormat.MANY_TRACKS:
+      pass
+
+   return header_chunk, data
 
 
-   return parse_chunk(data)
+
+def get_song_names():
+   return shu.ls('songs')
+
+def check_all_songs():
+   song_names = get_song_names()
+   for song_name in song_names:
+      song_path = 'songs/' + song_name
+      header_chunk, song1_bin = parse_midi_file(song_path)
+#check_all_songs()
 
 
-song1 = parse_midi_file('songs/confuta.mid')
+song_path = 'songs/confuta.mid'
+#song_path = '~/Downloads/sarahs-woven-music.1.mid'
+#song_path = '~/Downloads/Adeste_Fideles_sheet_music_sample.mid'
+#song_path = '~/Downloads/test.mid'
+header_chunk, song1_bin = parse_midi_file(song_path)
 
 
