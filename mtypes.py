@@ -44,6 +44,7 @@ class MetaEventType(enum.Enum):
    Marker = 0x06
    CuePoint = 0x07
    ChannelPrefix = 0x20
+   KkTrackStart = 0x21
    EndOfTrack = 0x2F
    SetTempo = 0x51
    SMTPE_offset = 0x54
@@ -53,6 +54,8 @@ class MetaEventType(enum.Enum):
 #Me = Meta Event
 MeSeqNum = namedtuple('MeSeqNum', 'seq_num')
 
+MeTrackStart = namedtuple('MeTrackStart', 'x')
+MeEndOfTrack = namedtuple('MeEndOfTrack', '')
 MeSetTempo = namedtuple('MeSetTempo', 'tt')
 
 MeTimeSig = namedtuple('MeTimeSig', 'n d c b')

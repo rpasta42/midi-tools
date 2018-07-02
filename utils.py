@@ -22,4 +22,11 @@ def parse_track_head(midi_data, track_h_start):
 
    return track_header, tr_data
 
+def parse_chunk_type(chunk_type_b):
+   chunk_type = None
+   if chunk_type_b == b'MThd':
+      chunk_type = ChunkType.HEADER
+   elif chunk_type_b == b'MTrk':
+      chunk_type = ChunkType.TRACK
+   return chunk_type
 

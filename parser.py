@@ -21,7 +21,7 @@ class FileHeaderParser:
       self.header = HeaderChunk._make(unp('>4sLHHH', self.midi_data[:size]))
       i += size
 
-      self.chunk_type = FileHeaderParser.parse_chunk_type_(self.header.chunk_type_b)
+      self.chunk_type = parse_chunk_type(self.header.chunk_type_b)
       self.division_type, self.tpqn, self.fps = FileHeaderParser.get_division_info_(self.header)
       self.midi_format = MidiFormat(self.header.format)
 
@@ -30,16 +30,6 @@ class FileHeaderParser:
       print(self.header)
       print('ticks per quarter note:', self.tpqn)
       print('midi format:', self.midi_format)
-
-
-
-   def parse_chunk_type_(chunk_type_b):
-      chunk_type = None
-      if chunk_type_b == b'MThd':
-         chunk_type = ChunkType.HEADER
-      elif chunk_type_b == b'MTrk':
-         chunk_type = ChunkType.TRACK
-      return chunk_type
 
    def get_division_info_(header):
       division_type_bit = header.division & (1 << 15)
