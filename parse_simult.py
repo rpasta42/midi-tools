@@ -7,6 +7,31 @@ from helpers import *
 
 ####parser for MIDI format 1 (Simultaneous tracks)
 
+def parse_delta(tr_data, delta_start):
+
+   def get_bit(offset):
+      return get_bit_i(tr_data, offset)
+
+   delta_done = False
+   delta_acc = []
+   delta_byte_i = delta_start
+   delta_len = 0
+
+   while not delta_done:
+      delta_done = get_bit(delta_byte_i*8+7) == 0
+
+      r = list(range(0, 7))
+      r.reverse()
+      for x in r:
+         delta_acc.append(get_bit(delta_byte_i*8+x))
+
+      delta_len += 1
+      delta_byte_i += 1
+
+   delta_acc.reverse()
+   delta_time = assemble_num(delta_acc)
+
+   return delta_time, delta_len
 
 
 def parse_mode_voice_event(tr_data, event_start):
@@ -18,10 +43,21 @@ def parse_mode_voice_event(tr_data, event_start):
    print('hex 1:', format(d[0], '02x'))
    print('hex 2:', format(d[1], '02x'))
 
-   e = None
-   e_end = None
+   e = None; e_end = None
 
-   return e, e_end
+   if 0xC0 <= d[0] < 0xD0:
+      track_num = d[0] - 0xC0
+      program = d[1]
+      print('change instrument', track_num, 'new program:', program)
+      e_end = 2
+      e = {'track_num':track_num, 'program':program}
+   elif 0xB0 <= d[0] < 0xC0:
+      track_num = d[0] - 0xB
+      data_byte1 = d[1]
+      data_byte2 = d[2]
+      print(data_byte1, format(data_byte2, '02x'))
+
+   return e, (event_start + e_end)
 
 
 def parse_meta_event(tr_data, meta_start):
@@ -46,6 +82,14 @@ def parse_meta_event(tr_data, meta_start):
    elif meta_e_type == MetaEventType.Copyright:
       pass
    elif meta_e_type == MetaEventType.SeqTrackName:
+      event_len, var_len = parse_delta(d, 2)
+      text_start = 2+var_len
+      text_end = text_start + event_len
+      text_b = unp('>%is' % (event_len,), d[text_start:text_end])[0]
+      text = str(text_b, 'ascii')
+
+      e = MeSeqTrackName._make((event_len, text))
+      end = text_end
       pass
    elif meta_e_type == MetaEventType.InstrumentName:
       pass
@@ -75,31 +119,6 @@ def parse_meta_event(tr_data, meta_start):
    return MetaEvent(meta_e_type, e, e_extra), (end + meta_start)
 
 
-def parse_delta(tr_data, delta_start):
-
-   def get_bit(offset):
-      return get_bit_i(tr_data, offset)
-
-   delta_done = False
-   delta_acc = []
-   delta_byte_i = delta_start
-   delta_len = 0
-
-   while not delta_done:
-      delta_done = get_bit(delta_byte_i*8+7) == 0
-
-      r = list(range(0, 7))
-      r.reverse()
-      for x in r:
-         delta_acc.append(get_bit(delta_byte_i*8+x))
-
-      delta_len += 1
-      delta_byte_i += 1
-
-   delta_acc.reverse()
-   delta_time = assemble_num(delta_acc)
-
-   return delta_time, delta_len
 
 
 def parse_delta_and_event(tr_data, delta_start):
@@ -131,38 +150,6 @@ def parse_delta_and_event(tr_data, delta_start):
 
 
 
-def parse_sound_track(midi_data, start):
-   print('=======================')
-   print(start)
-   track_header, tr_data = parse_track_head(midi_data, start)
-
-   x = parse_chunk_type(track_header.chunk_type_b)
-   print(x)
-
-   delta_start = 0
-   delta_time, delta_len = parse_delta(tr_data, delta_start)
-
-   event_start = delta_start + delta_len
-   print(tr_data[event_start:event_start+5])
-
-   if tr_data[event_start] == 0xFF:
-
-      meta_e, e_end = parse_meta_event(tr_data, event_start)
-   elif tr_data[event_start] in [0xF0, 0xF7]:
-      print('sysex event')
-   else:
-      print(tr_data[event_start])
-      print('prolly Channel Mode/Voice message')
-      #TODO: not meta_e!!
-      meta_e, e_end = parse_mode_voice_event(tr_data, event_start)
-
-
-   print(tr_data[e_end:e_end+5])
-
-   return delta_time, meta_e, e_end
-
-   pass
-
 
 def parse_tracks1(midi_data):
 
@@ -189,7 +176,38 @@ def parse_tracks1(midi_data):
 
       pass
 
-   parse_sound_track(midi_data, track_h_start + track_header.len + 8)
+
+   print('=======================')
+
+
+   start = track_h_start + track_header.len + 8
+   print(start)
+   track_header, tr_data = parse_track_head(midi_data, start)
+
+   x = parse_chunk_type(track_header.chunk_type_b)
+   print(x)
+
+   done = False
+   delta_times, events = ([], [])
+   start = 0
+   while not done:
+      print('====')
+      delta_time, meta_e, e_end = parse_delta_and_event(tr_data, start)
+      print(delta_time, meta_e, e_end)
+      delta_times.append(delta_time)
+      events.append(meta_e)
+      start = e_end
+
+      print(start, track_header.len)
+      if start >= track_header.len:
+         done = True
+
+      pass
+
+
+
+
+
 
    '''print(tr_data[start:start+5])
    print(' '.join([str(x) for x in tr_data[start:start+5]]))

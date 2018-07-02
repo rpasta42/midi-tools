@@ -53,7 +53,7 @@ class MetaEventType(enum.Enum):
 
 #Me = Meta Event
 MeSeqNum = namedtuple('MeSeqNum', 'seq_num')
-
+MeSeqTrackName = namedtuple('MySeqTrackName', 'len name')
 MeTrackStart = namedtuple('MeTrackStart', 'x')
 MeEndOfTrack = namedtuple('MeEndOfTrack', '')
 MeSetTempo = namedtuple('MeSetTempo', 'tt')
